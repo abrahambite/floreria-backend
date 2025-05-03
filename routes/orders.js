@@ -1,19 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const path = require('path');
-const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
-
-// Modelo pedido (simplificado)
-const mongoose = require('mongoose');
-const PedidoSchema = new mongoose.Schema({
-  nombre: String,
-  telefono: String,
-  mensaje: String,
-  carrito: Array,
-  comprobanteUrl: String
-}, { timestamps: true });
-const Pedido = mongoose.model('Pedido', PedidoSchema);
+const Pedido = require('../models/Pedido');
+const fs = require('fs');
 
 // Crear pedido
 router.post('/', async (req, res) => {
@@ -32,7 +22,9 @@ router.post('/', async (req, res) => {
     await comprobante.mv(uploadPath);
 
     const pedido = new Pedido({
-      nombre, telefono, mensaje,
+      nombre,
+      telefono,
+      mensaje,
       carrito,
       comprobanteUrl: `/uploads/${imageName}`
     });
@@ -47,8 +39,12 @@ router.post('/', async (req, res) => {
 
 // Obtener pedidos
 router.get('/', async (req, res) => {
-  const pedidos = await Pedido.find().sort({ createdAt: -1 });
-  res.json(pedidos);
+  try {
+    const pedidos = await Pedido.find().sort({ createdAt: -1 });
+    res.json(pedidos);
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener pedidos' });
+  }
 });
 
 module.exports = router;
