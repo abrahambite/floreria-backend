@@ -11,7 +11,6 @@ router.get('/', async (req, res) => {
     const products = await Product.find().sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
-    console.error('❌ Error al obtener productos:', err);
     res.status(500).json({ error: 'Error al obtener productos' });
   }
 });
@@ -19,9 +18,8 @@ router.get('/', async (req, res) => {
 // Crear producto
 router.post('/', async (req, res) => {
   try {
-    const { name, price, description, paymentLink } = req.body;
+    const { name, price, description } = req.body;
 
-    // Validación de imagen
     if (!req.files || !req.files.image) {
       return res.status(400).json({ error: 'Imagen requerida' });
     }
@@ -31,29 +29,34 @@ router.post('/', async (req, res) => {
     const imageName = uuidv4() + ext;
     const uploadPath = path.join(__dirname, '..', 'uploads', imageName);
 
-    // Crear carpeta si no existe
-    const dir = path.join(__dirname, '..', 'uploads');
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
+    if (!fs.existsSync(path.join(__dirname, '..', 'uploads'))) {
+      fs.mkdirSync(path.join(__dirname, '..', 'uploads'));
     }
 
-    // Mover imagen
     await image.mv(uploadPath);
 
-    // Crear producto
     const newProduct = new Product({
       name,
       price,
       description,
-      paymentLink,
-      imageUrl: '/uploads/' + imageName
+      imageUrl: `/uploads/${imageName}`
     });
 
     await newProduct.save();
-    res.status(201).json({ message: 'Producto creado correctamente' });
+    res.status(201).json({ message: 'Producto creado' });
   } catch (err) {
-    console.error('❌ Error al crear producto:', err);
+    console.error(err);
     res.status(500).json({ error: 'Error al crear producto' });
+  }
+});
+
+// Eliminar producto
+router.delete('/:id', async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Producto eliminado' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al eliminar producto' });
   }
 });
 
