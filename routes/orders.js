@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 const Pedido = require('../models/Pedido');
+const path = require('path');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 
 // Crear pedido
 router.post('/', async (req, res) => {
@@ -15,18 +15,24 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Comprobante requerido' });
     }
 
-    const comprobante = req.files.comprobante;
-    const ext = path.extname(comprobante.name);
-    const imageName = uuidv4() + ext;
-    const uploadPath = path.join(__dirname, '..', 'uploads', imageName);
-    await comprobante.mv(uploadPath);
+    const archivo = req.files.comprobante;
+    const ext = path.extname(archivo.name);
+    const nombreArchivo = uuidv4() + ext;
+    const uploadPath = path.join(__dirname, '..', 'uploads', nombreArchivo);
+
+    if (!fs.existsSync(path.join(__dirname, '..', 'uploads'))) {
+      fs.mkdirSync(path.join(__dirname, '..', 'uploads'));
+    }
+
+    await archivo.mv(uploadPath);
 
     const pedido = new Pedido({
       nombre,
       telefono,
       mensaje,
       carrito,
-      comprobanteUrl: `/uploads/${imageName}`
+      comprobanteUrl: `/uploads/${nombreArchivo}`,
+      estado: 'Pendiente'
     });
 
     await pedido.save();
@@ -44,6 +50,17 @@ router.get('/', async (req, res) => {
     res.json(pedidos);
   } catch (err) {
     res.status(500).json({ error: 'Error al obtener pedidos' });
+  }
+});
+
+// Actualizar estado
+router.put('/:id', async (req, res) => {
+  try {
+    const { estado } = req.body;
+    await Pedido.findByIdAndUpdate(req.params.id, { estado });
+    res.json({ message: 'Estado actualizado' });
+  } catch (err) {
+    res.status(500).json({ error: 'Error al actualizar estado' });
   }
 });
 
