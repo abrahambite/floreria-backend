@@ -30,7 +30,6 @@ router.post('/', async (req, res) => {
     const imageName = uuidv4() + ext;
     const uploadPath = path.join(__dirname, '..', 'uploads', imageName);
 
-    // Crear carpeta si no existe
     const dir = path.join(__dirname, '..', 'uploads');
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
