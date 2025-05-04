@@ -11,11 +11,12 @@ router.get('/', async (req, res) => {
     const products = await Product.find().sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
+    console.error('❌ Error al obtener productos:', err);
     res.status(500).json({ error: 'Error al obtener productos' });
   }
 });
 
-// Crear producto
+// Crear producto con imagen
 router.post('/', async (req, res) => {
   try {
     const { name, price, description } = req.body;
@@ -29,8 +30,10 @@ router.post('/', async (req, res) => {
     const imageName = uuidv4() + ext;
     const uploadPath = path.join(__dirname, '..', 'uploads', imageName);
 
-    if (!fs.existsSync(path.join(__dirname, '..', 'uploads'))) {
-      fs.mkdirSync(path.join(__dirname, '..', 'uploads'));
+    // Crear carpeta si no existe
+    const dir = path.join(__dirname, '..', 'uploads');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
     }
 
     await image.mv(uploadPath);
@@ -39,14 +42,32 @@ router.post('/', async (req, res) => {
       name,
       price,
       description,
-      imageUrl: `/uploads/${imageName}`
+      imageUrl: '/uploads/' + imageName
     });
 
     await newProduct.save();
-    res.status(201).json({ message: 'Producto creado' });
+    res.status(201).json({ message: 'Producto creado correctamente' });
   } catch (err) {
-    console.error(err);
+    console.error('❌ Error al crear producto:', err);
     res.status(500).json({ error: 'Error al crear producto' });
+  }
+});
+
+// Actualizar producto
+router.put('/:id', async (req, res) => {
+  try {
+    const { name, price, description } = req.body;
+
+    const productoActualizado = await Product.findByIdAndUpdate(
+      req.params.id,
+      { name, price, description },
+      { new: true }
+    );
+
+    res.json(productoActualizado);
+  } catch (err) {
+    console.error('❌ Error al editar producto:', err);
+    res.status(500).json({ error: 'Error al editar producto' });
   }
 });
 
@@ -56,6 +77,7 @@ router.delete('/:id', async (req, res) => {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: 'Producto eliminado' });
   } catch (err) {
+    console.error('❌ Error al eliminar producto:', err);
     res.status(500).json({ error: 'Error al eliminar producto' });
   }
 });
